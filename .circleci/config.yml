@@ -1,321 +1,78 @@
 version: 2.1
 
 orbs:
-  slack: circleci/slack@4.10.1
-
-commands:
-  destroy-environment:
-    parameters:
-      id:
-        type: string
-    steps:
-      - run:
-          name: Destroy environments
-          when: on_fail
-          command: |
-            aws s3 rb --force s3://udapeople-<< parameters.id >>
-            aws cloudformation delete-stack --stack-name udapeople-backend-<< parameters.id >>
-            aws cloudformation delete-stack --stack-name udapeople-frontend-<< parameters.id >>
-  # revert-migrations:
-  #   description: Revert the last migration
-  #   parameters:
-  #     id:
-  #       type: string
-  #   steps:
-  #     - run:
-  #         name: Revert migrations
-  #         when: on_fail
-  #         command: |
-  #           cd ~/project/backend
-  #           npm install
-  #           npm run migrations:revert
+  aws-eks: circleci/aws-eks@1.1.0
+  kubernetes: circleci/kubernetes@0.4.0
 
 jobs:
-  build-frontend:
-    docker:
-      - image: circleci/node:13.8.0
+  create-deployment:
+    executor: aws-eks/python3
+    parameters:
+      cluster-name:
+        description: |
+          Name of the EKS cluster
+        type: string
     steps:
       - checkout
-      - restore_cache:
-          keys: [frontend-build]
-      - run:
-          command: |
-            cd frontend
-            npm install
-            npm run build
-      - save_cache:
-          paths: [frontend/node_modules]
-          key: frontend-build
-
-  test-frontend:
-    docker:
-      - image: circleci/node:13.8.0
+      - aws-eks/update-kubeconfig-with-authenticator:
+          cluster-name: << parameters.cluster-name >>
+          install-kubectl: true
+      - kubernetes/create-or-update-resource:
+          get-rollout-status: true
+          resource-file-path: deployment.json
+          resource-name: deployment/blue
+  create-service:
+    executor: aws-eks/python3
+    parameters:
+      cluster-name:
+        description: |
+          Name of the EKS cluster
+        type: string
     steps:
       - checkout
-      - restore_cache:
-          keys: [frontend-test]
-      - run:
-          command: |
-            cd frontend
-            npm install
-            npm run test
-      - save_cache:
-          paths: [frontend/node_modules]
-          key: frontend-test
-
-  scan-frontend:
-    docker:
-      - image: circleci/node:13.8.0
+      - aws-eks/update-kubeconfig-with-authenticator:
+          cluster-name: << parameters.cluster-name >>
+          install-kubectl: true
+      - kubernetes/create-or-update-resource:
+          resource-file-path: service.json
+          resource-name: service/bluegreenlb
+  create-small-cluster:
+    executor: aws-eks/python3
+    parameters:
+      cluster-name:
+        description: |
+          Name of the EKS cluster
+        type: string
     steps:
       - checkout
-      - restore_cache:
-          keys: [frontend-scan]
-      - run:
-          command: |
-            cd frontend
-            npm install
-            # npm install oauth-sign@^0.9.0
-            npm audit fix --audit-level=critical
-      - save_cache:
-          paths: [frontend/node_modules]
-          key: frontend-scan
+      - aws-eks/install-aws-iam-authenticator:
+          release-tag: ''
+      - aws-eks/create-cluster:
+          cluster-name: << parameters.cluster-name >>
+          skip-kubectl-install: false
+          verbose: 3
+          node-type: t2.small
+          nodes-max: 2
+          ssh-access: false
+          ssh-public-key: ''
 
-  deploy-infrastructure:
-    docker:
-      - image: amazon/aws-cli
-    steps:
-      - checkout
-      - run: yum install -y tar gzip
-      - run:
-          command: |
-            aws cloudformation deploy \
-            --template-file .circleci/files/frontend.yml \
-            --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
-            --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
-            --tags project=udapeople
-      - run:
-          name: Add front-end ip to ansible inventory
-          command: |
-            cd .circleci/ansible
-            aws ec2 describe-instances \
-            --query 'Reservations[*].Instances[*].PublicIpAddress' \
-            --filters "Name=tag:Name,Values=frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
-            --output text >> inventory.txt
-            cat inventory.txt
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - project/.circleci/ansible/inventory.txt
-      - destroy-environment:
-          id: ${CIRCLE_WORKFLOW_ID:0:7}
-
-  configure-infrastructure:
-    docker:
-      - image: python:3.7-alpine3.11
-    steps:
-      - checkout
-      - add_ssh_keys:
-          fingerprints: ["44:65:4b:05:cf:b6:69:9b:8d:4f:c3:e1:93:8f:9b:1e"]
-      - attach_workspace:
-          at: ~/
-      - run:
-          name: Install dependencies
-          command: |
-            apk add --update ansible
-            apk add --no-cache \
-                python3 \
-                py3-pip \
-            && pip3 install --upgrade pip \
-            && pip3 install awscli
-      - run:
-          name: Configure server
-          command: |
-            cd .circleci/ansible
-            ansible-playbook -i inventory.txt configure-server.yml
-          no_output_timeout: 30m
-      - destroy-environment:
-          id: ${CIRCLE_WORKFLOW_ID:0:7}
-
-  deploy-frontend:
-    docker:
-      - image: amazon/aws-cli
-    steps:
-      - checkout
-      - run:
-          name: Install dependencies
-          command: |
-            echo "========gzip"
-            yum install -y tar gzip
-            echo "========curl"
-            curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
-            echo "========nodejs"
-            yum -y install nodejs
-      - run:
-          name: Get backend url
-          command: |
-            echo API_URL="http://localhost:3030" >> frontend/.env
-            cat frontend/.env
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - project/frontend/.env
-      - run:
-          name: Deploy frontend objects
-          command: |
-            cd frontend
-            npm install
-            npm run build
-            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
-            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
-      - destroy-environment:
-          id: ${CIRCLE_WORKFLOW_ID:0:7}
-      # - revert-migrations:
-      #     id: ${CIRCLE_WORKFLOW_ID:0:7}
-
-  smoke-test:
-    docker:
-      - image: python:3.7-alpine3.11
-    steps:
-      - checkout
-      - run:
-          name: Install dependencies
-          command: |
-            apk update
-            apk add --no-cache \
-                python3 \
-                py3-pip \
-            && pip3 install --upgrade pip \
-            && pip3 install awscli
-            echo 'aws cli version:'
-            aws --version
-            apk add --update curl nodejs npm
-      - run:
-          name: Frontend smoke test
-          command: |
-            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees"
-            echo ${URL}
-            if curl -s ${URL} | grep "Welcome"
-            then
-                # Change this to 0 after the job fails
-              return 0
-            else
-              return 1
-            fi
-      - destroy-environment:
-          id: ${CIRCLE_WORKFLOW_ID:0:7}
-      # - revert-migrations:
-      #     id: ${CIRCLE_WORKFLOW_ID:0:7}
-
-  cloudfront-update:
-    docker:
-      - image: amazon/aws-cli
-    steps:
-      - checkout
-      - run:
-          name: Update cloudfront
-          command: |
-            aws cloudformation deploy \
-            --template-file .circleci/files/cloudfront.yml \
-            --stack-name InitialStack \
-            --parameter-overrides WorkflowID="udapeople-${CIRCLE_WORKFLOW_ID:0:7}" \
-            --tags project=udapeople
-      - destroy-environment:
-          id: ${CIRCLE_WORKFLOW_ID}
-      # - revert-migrations:
-      #     id: ${CIRCLE_WORKFLOW_ID}
-
-  cleanup:
-    docker:
-      - image: amazon/aws-cli
-    steps:
-      - run:
-          command: |
-            # Fetch the Old workflow ID
-            export OldWorkflowID=$(aws cloudformation \
-                    list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
-                    --no-paginate --output text)
-            echo OldWorkflowID: "${OldWorkflowID}"
-            echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
-            # Fetch the stack names
-            export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
-                    --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
-            echo Stack names: "${STACKS[@]}"
-
-            # You can use any condition like:
-            # if [[ "${CIRCLE_WORKFLOW_ID:0:7}" != "${OldWorkflowID}" ]]
-            # if [[ "${OldWorkflowID}" =~ "${STACKS[@]}"  ]]
-            if [[ "udapeople-${CIRCLE_WORKFLOW_ID:0:7}" != "${OldWorkflowID}" ]]
-            then
-            # your code goes here
-            echo "============Delete Confirme============"
-            aws s3 rm "s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}" --recursive
-            aws cloudformation delete-stack --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
-            aws cloudformation delete-stack --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
-            else
-            # your code goes here
-            echo "============Cannot Cleanup============"
-            fi
-
-# Invoke jobs via workflows
-# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
-  p3-workflow:
+  deployment:
     jobs:
-      # - build-frontend:
-      #     filters:
-      #       branches:
-      #         only:
-      #           - main
-      # - test-frontend:
-      #     requires:
-      #       - build-frontend
-      #     filters:
-      #       branches:
-      #         only:
-      #           - main
-      # - scan-frontend:
-      #     requires:
-      #       - build-frontend
-      #     filters:
-      #       branches:
-      #         only:
-      #           - main
-      - deploy-infrastructure:
-          # requires: [test-frontend]
-          filters:
-            branches:
-              only:
-                - main
-      - configure-infrastructure:
+      - create-small-cluster:
+          cluster-name: eks-demo-deployment
+      - create-service:
+          cluster-name: eks-demo-deployment
           requires:
-            - deploy-infrastructure
-          filters:
-            branches:
-              only:
-                - main
-      - deploy-frontend:
-          requires: [configure-infrastructure]
-          filters:
-            branches:
-              only:
-                - main
-      - smoke-test:
-          requires: [deploy-frontend]
-          filters:
-            branches:
-              only:
-                - main
-      - cloudfront-update:
+            - create-small-cluster
+      - create-deployment:
+          cluster-name: eks-demo-deployment
           requires:
-            - smoke-test
-          filters:
-            branches:
-              only:
-                - main
-      - cleanup:
+            - create-service
+      - aws-eks/update-container-image:
+          cluster-name: eks-demo-deployment
+          container-image-updates: 'blue=andresaaap/testblueimage:latest'
+          record: true
           requires:
-            - cloudfront-update
-          filters:
-            branches:
-              only:
-                - main
+            - create-deployment
+          resource-name: deployment/blue
