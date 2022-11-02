@@ -6,8 +6,7 @@ orbs:
 
 jobs:
   create-deployment:
-    docker:
-      - image: aws-eks/python3
+    executor: aws-eks/python3
     parameters:
       cluster-name:
         description: |
@@ -23,8 +22,7 @@ jobs:
           resource-file-path: deployment.json
           resource-name: deployment/blue
   create-service:
-    docker:
-      - image: aws-eks/python3
+    executor: aws-eks/python3
     parameters:
       cluster-name:
         description: |
@@ -39,8 +37,7 @@ jobs:
           resource-file-path: service.json
           resource-name: service/bluegreenlb
   create-small-cluster:
-    docker:
-      - image: aws-eks/python3
+    executor: aws-eks/python3
     parameters:
       cluster-name:
         description: |
