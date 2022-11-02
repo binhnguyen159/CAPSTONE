@@ -93,10 +93,10 @@ jobs:
             --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
             --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
             --tags project=udapeople
-      # - persist_to_workspace:
-      #     root: ~/
-      #     paths:
-      #       - project/.circleci/ansible/inventory.txt
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - project/.circleci/ansible/inventory.txt
       - destroy-environment:
           id: ${CIRCLE_WORKFLOW_ID:0:7}
 
@@ -118,12 +118,12 @@ jobs:
                 py3-pip \
             && pip3 install --upgrade pip \
             && pip3 install awscli
-      - run:
-          name: Configure server
-          command: |
-            cd .circleci/ansible
-            ansible-playbook -i inventory.txt configure-server.yml
-          no_output_timeout: 30m
+      # - run:
+      #     name: Configure server
+      #     command: |
+      #       cd .circleci/ansible
+      #       ansible-playbook -i inventory.txt configure-server.yml
+      #     no_output_timeout: 30m
       - destroy-environment:
           id: ${CIRCLE_WORKFLOW_ID:0:7}
 
@@ -141,12 +141,7 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            BACKEND_IP=$(aws ec2 describe-instances \
-            --query 'Reservations[*].Instances[*].PublicIpAddress' \
-            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --output text)
-            export API_URL="http://${BACKEND_IP}:3030"
-            echo "${API_URL}"
-            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+            echo API_URL="http://localhost:3030" >> frontend/.env
             cat frontend/.env
       - persist_to_workspace:
           root: ~/
@@ -273,21 +268,21 @@ workflows:
             branches:
               only:
                 - main
-      # - deploy-infrastructure:
-      #     requires: [test-frontend, test-backend, scan-frontend, scan-backend]
-      #     filters:
-      #       branches:
-      #         only:
-      #           - main
-      # - configure-infrastructure:
-      #     requires:
-      #       - deploy-infrastructure
-      #     filters:
-      #       branches:
-      #         only:
-      #           - main
-      - deploy-frontend:
+      - deploy-infrastructure:
           requires: [test-frontend, scan-frontend]
+          filters:
+            branches:
+              only:
+                - main
+      - configure-infrastructure:
+          requires:
+            - deploy-infrastructure
+          filters:
+            branches:
+              only:
+                - main
+      - deploy-frontend:
+          requires: [configure-infrastructure]
           filters:
             branches:
               only:
