@@ -137,7 +137,7 @@ jobs:
           command: |
             yum install -y tar gzip
             # curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
-            # yum -y install nodejs
+            yum -y install nodejs
       - run:
           name: Get backend url
           command: |
