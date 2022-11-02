@@ -49,7 +49,7 @@ jobs:
           command: |
             cd frontend
             npm install
-            npm run lint
+            npm run test
 
   build-frontend:
     docker:
