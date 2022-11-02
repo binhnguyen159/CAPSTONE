@@ -72,10 +72,10 @@ workflows:
           cluster-name: eks-demo-deployment
           requires:
             - create-service
-      - aws-eks/update-container-image:
-          cluster-name: eks-demo-deployment
-          container-image-updates: "blue=andresaaap/testblueimage:latest"
-          record: true
-          requires:
-            - create-deployment
-          resource-name: deployment/blue
+      # - aws-eks/update-container-image:
+      #     cluster-name: eks-demo-deployment
+      #     container-image-updates: "blue=andresaaap/testblueimage:latest"
+      #     record: true
+      #     requires:
+      #       - create-deployment
+      #     resource-name: deployment/blue
