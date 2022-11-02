@@ -73,12 +73,12 @@ jobs:
           name: Build front-end
           command: |
             cd frontend
-            docker build -t duyhuynhdn/capstone-frontend .
+            docker build -t binhnguyen058/capstone-frontend .
       - run:
           name: Save Docker image layer cache
           command: |
             mkdir -p /caches
-            docker save -o /caches/capstone-frontend.tar duyhuynhdn/capstone-frontend
+            docker save -o /caches/capstone-frontend.tar binhnguyen058/capstone-frontend
       - save_cache:
           key: v1-{{ .Branch }}-{{ epoch }}
           paths:
@@ -87,7 +87,7 @@ jobs:
           name: Publish Docker Image to Docker Hub
           command: |
             echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASS"
-            docker push duyhuynhdn/capstone-frontend:latest
+            docker push binhnguyen058/capstone-frontend:latest
 
   deploy-frontend:
     executor: aws-eks/python3
@@ -141,7 +141,7 @@ jobs:
           resource-name: deployment/capstone-frontend-$COLOR
       - kubernetes/update-container-image:
           get-rollout-status: true
-          container-image-updates: "capstone-frontend=duyhuynhdn/capstone-frontend:latest"
+          container-image-updates: "capstone-frontend=binhnguyen058/capstone-frontend:latest"
           resource-name: deployment/capstone-frontend-$COLOR
       - run:
           name: Restart image
@@ -154,27 +154,29 @@ workflows:
   default:
     jobs:
       - cfn-lint
-      # - deploy-cfn:
-      #     stack-name: Udacity-Capstone
-      #     requires:
-      #       - cfn-lint
-      # - lint-frontend
-      # - build-frontend:
-      #     requires:
-      #       - lint-frontend
-      # - deploy-frontend:
-      #     cluster-name: "EKSClusterCapstone"
-      #     requires:
-      #       - build-frontend
-      #       - deploy-cfn
-      # - aws-eks/update-container-image:
-      #     cluster-name: "EKSClusterCapstone"
-      #     container-image-updates: 'capstone-frontend=duyhuynhdn/capstone-frontend:latest'
-      #     post-steps:
-      #       - kubernetes/delete-resource:
-      #           resource-names: capstone-frontend
-      #           resource-types: deployment
-      #           wait: true
-      #     requires:
-      #       - deploy-frontend
-      #     resource-name: deployment/capstone-frontend
+      - deploy-cfn:
+          stack-name: Udacity-P5-Capstone
+          requires:
+            - cfn-lint
+      - lint-frontend:
+          requires:
+            - deploy-cfn
+      - build-frontend:
+          requires:
+            - lint-frontend
+      - deploy-frontend:
+          cluster-name: "EKSClusterCapstone"
+          requires:
+            - build-frontend
+            - deploy-cfn
+      - aws-eks/update-container-image:
+          cluster-name: "EKSClusterCapstone"
+          container-image-updates: "capstone-frontend=binhnguyen058/capstone-frontend:latest"
+          post-steps:
+            - kubernetes/delete-resource:
+                resource-names: capstone-frontend
+                resource-types: deployment
+                wait: true
+          requires:
+            - deploy-frontend
+          resource-name: deployment/capstone-frontend
