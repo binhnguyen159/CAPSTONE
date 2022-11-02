@@ -18,7 +18,7 @@ jobs:
       - run:
           name: Validate CloudFormation template
           command: |
-            cfn-lint infrastructure/capstone-infra.yml
+            cfn-lint infras/capstone-infra.yml
 
   deploy-cfn:
     parameters:
