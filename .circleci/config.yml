@@ -59,23 +59,6 @@ jobs:
       - kubernetes/create-or-update-resource:
           resource-file-path: service.yml
           resource-name: service/bluegreenlb
-  update-container-image:
-    docker:
-      - image: "cimg/python:3.10"
-    parameters:
-      cluster-name:
-        description: |
-          Name of the EKS cluster
-        type: string
-    steps:
-      - checkout
-      - aws-eks/update-container-image:
-          cluster-name: eks-demo-deployment
-          container-image-updates: "blue=andresaaap/testblueimage:latest"
-          record: true
-          requires:
-            - create-deployment
-          resource-name: deployment/blue
 
 workflows:
   deployment:
@@ -90,7 +73,10 @@ workflows:
           cluster-name: eks-demo-deployment
           requires:
             - create-service
-      - update-container-image:
+      - aws-eks/update-container-image:
           cluster-name: eks-demo-deployment
+          container-image-updates: "blue=andresaaap/testblueimage:latest"
+          record: true
           requires:
             - create-deployment
+          resource-name: deployment/blue
