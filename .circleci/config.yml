@@ -34,8 +34,8 @@ jobs:
           no_output_timeout: 30m
           command: |
             aws cloudformation deploy \
-            --template-file infrastructure/capstone-infra.yml \
-            --parameter-overrides $(jq -r '.[] | [.ParameterKey, .ParameterValue] | "\(.[0])=\(.[1])"' ./infrastructure/capstone-infra-parameters.json) \
+            --template-file infras/capstone-infra.yml \
+            --parameter-overrides $(jq -r '.[] | [.ParameterKey, .ParameterValue] | "\(.[0])=\(.[1])"' ./infras/capstone-infra-parameters.json) \
             --stack-name << parameters.stack-name >> \
             --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM"
 
