@@ -75,7 +75,7 @@ workflows:
             - create-service
       - aws-eks/update-container-image:
           cluster-name: eks-demo-deployment
-          container-image-updates: "blue=andresaaap/testblueimage:latest"
+          container-image-updates: "blue=binh/testblueimage:latest"
           record: true
           requires:
             - create-deployment
