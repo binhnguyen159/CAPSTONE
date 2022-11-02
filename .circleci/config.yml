@@ -165,19 +165,19 @@ workflows:
       - build-frontend:
           requires:
             - lint-frontend
-      - deploy-frontend:
-          cluster-name: "EKSClusterCapstone"
-          requires:
-            - build-frontend
-            - deploy-cfn
-      - aws-eks/update-container-image:
-          cluster-name: "EKSClusterCapstone"
-          container-image-updates: "capstone-frontend=binhnguyen058/capstone-frontend:latest"
-          post-steps:
-            - kubernetes/delete-resource:
-                resource-names: capstone-frontend
-                resource-types: deployment
-                wait: true
-          requires:
-            - deploy-frontend
-          resource-name: deployment/capstone-frontend
+      # - deploy-frontend:
+      #     cluster-name: "EKSClusterCapstone"
+      #     requires:
+      #       - build-frontend
+      #       - deploy-cfn
+      # - aws-eks/update-container-image:
+      #     cluster-name: "EKSClusterCapstone"
+      #     container-image-updates: "capstone-frontend=binhnguyen058/capstone-frontend:latest"
+      #     post-steps:
+      #       - kubernetes/delete-resource:
+      #           resource-names: capstone-frontend
+      #           resource-types: deployment
+      #           wait: true
+      #     requires:
+      #       - deploy-frontend
+      #     resource-name: deployment/capstone-frontend
