@@ -162,8 +162,8 @@ jobs:
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
       - destroy-environment:
           id: ${CIRCLE_WORKFLOW_ID:0:7}
-      - revert-migrations:
-          id: ${CIRCLE_WORKFLOW_ID:0:7}
+      # - revert-migrations:
+      #     id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   smoke-test:
     docker:
@@ -196,8 +196,8 @@ jobs:
             fi
       - destroy-environment:
           id: ${CIRCLE_WORKFLOW_ID:0:7}
-      - revert-migrations:
-          id: ${CIRCLE_WORKFLOW_ID:0:7}
+      # - revert-migrations:
+      #     id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   cloudfront-update:
     docker:
@@ -214,8 +214,8 @@ jobs:
             --tags project=udapeople
       - destroy-environment:
           id: ${CIRCLE_WORKFLOW_ID}
-      - revert-migrations:
-          id: ${CIRCLE_WORKFLOW_ID}
+      # - revert-migrations:
+      #     id: ${CIRCLE_WORKFLOW_ID}
 
   cleanup:
     docker:
