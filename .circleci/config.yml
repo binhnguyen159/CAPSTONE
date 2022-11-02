@@ -287,14 +287,13 @@ workflows:
       #         only:
       #           - main
       - deploy-frontend:
-          requires:
-            - run-migrations
+          requires: [test-frontend, scan-frontend]
           filters:
             branches:
               only:
                 - main
       - smoke-test:
-          requires: [deploy-frontend, deploy-backend]
+          requires: [deploy-frontend]
           filters:
             branches:
               only:
