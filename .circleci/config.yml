@@ -7,7 +7,7 @@ orbs:
 jobs:
   create-small-cluster:
     docker:
-      - image: 'cimg/python:3.10'
+      - image: "cimg/python:3.10"
     parameters:
       cluster-name:
         description: |
@@ -21,14 +21,15 @@ jobs:
           cluster-name: << parameters.cluster-name >>
           skip-kubectl-install: false
           verbose: 3
-          aws-region: [us-east-1a, us-east-1b, us-east-1c, us-east-1d, us-east-1f]
+          aws-region:
+            [us-east-1a, us-east-1b, us-east-1c, us-east-1d, us-east-1f]
           node-type: t2.small
           nodes-max: 2
           ssh-access: false
           ssh-public-key: ""
   create-deployment:
     docker:
-      - image: 'cimg/python:3.10'
+      - image: "cimg/python:3.10"
     parameters:
       cluster-name:
         description: |
@@ -45,7 +46,7 @@ jobs:
           resource-name: deployment/blue
   create-service:
     docker:
-      - image: 'cimg/python:3.10'
+      - image: "cimg/python:3.10"
     parameters:
       cluster-name:
         description: |
@@ -59,6 +60,23 @@ jobs:
       - kubernetes/create-or-update-resource:
           resource-file-path: service.yml
           resource-name: service/bluegreenlb
+  update-container-image:
+    docker:
+      - image: "cimg/python:3.10"
+    parameters:
+      cluster-name:
+        description: |
+          Name of the EKS cluster
+        type: string
+    steps:
+      - checkout
+      - aws-eks/update-container-image:
+          cluster-name: eks-demo-deployment
+          container-image-updates: "blue=andresaaap/testblueimage:latest"
+          record: true
+          requires:
+            - create-deployment
+          resource-name: deployment/blue
 
 workflows:
   deployment:
@@ -72,7 +90,10 @@ workflows:
       - create-deployment:
           cluster-name: eks-demo-deployment
           requires:
-            - create-service
+      - update-container-image:
+          cluster-name: eks-demo-deployment
+          requires:
+            - create-deployment
       # - aws-eks/update-container-image:
       #     cluster-name: eks-demo-deployment
       #     container-image-updates: "blue=andresaaap/testblueimage:latest"
