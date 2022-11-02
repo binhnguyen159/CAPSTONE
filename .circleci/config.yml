@@ -21,8 +21,7 @@ jobs:
           cluster-name: << parameters.cluster-name >>
           skip-kubectl-install: false
           verbose: 3
-          aws-region:
-            [us-east-1a, us-east-1b, us-east-1c, us-east-1d, us-east-1f]
+          aws-region: us-east-1a
           node-type: t2.small
           nodes-max: 2
           ssh-access: false
