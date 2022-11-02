@@ -135,12 +135,9 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            apk add --update ansible
-            apk add --no-cache \
-                python3 \
-                py3-pip \
-            && pip3 install --upgrade pip \
-            && pip3 install awscli
+            yum install -y tar gzip
+            # curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
+            # yum -y install nodejs
       - run:
           name: Get backend url
           command: |
@@ -264,15 +261,15 @@ workflows:
             branches:
               only:
                 - main
-      - scan-frontend:
-          requires:
-            - build-frontend
-          filters:
-            branches:
-              only:
-                - main
+      # - scan-frontend:
+      #     requires:
+      #       - build-frontend
+      #     filters:
+      #       branches:
+      #         only:
+      #           - main
       - deploy-infrastructure:
-          requires: [test-frontend, scan-frontend]
+          requires: [test-frontend]
           filters:
             branches:
               only:
