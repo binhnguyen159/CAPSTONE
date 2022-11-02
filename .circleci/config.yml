@@ -76,7 +76,7 @@ workflows:
       - aws-eks/update-container-image:
           cluster-name: eks-demo-deployment
           container-image-updates: "blue=binh/testblueimage:latest"
-          record: true
+          # record: true
           requires:
             - create-deployment
           resource-name: deployment/blue
