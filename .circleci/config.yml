@@ -92,7 +92,7 @@ jobs:
 
   deploy-frontend:
     docker:
-      - image: docker:17.05.0-ce-git
+      - image: cimg/python:3.10
     parameters:
       cluster-name:
         description: |
