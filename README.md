@@ -1,4 +1,3 @@
-[![CircleCI](https://dl.circleci.com/status-badge/img/gh/binhnguyen159/CAPSTONE/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/binhnguyen159/CAPSTONE/tree/main)
 
 URL:
     github: https://github.com/binhnguyen159/CAPSTONE
