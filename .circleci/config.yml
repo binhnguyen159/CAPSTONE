@@ -150,26 +150,23 @@ jobs:
           command: |
             kubectl rollout restart deployment/capstone-frontend-$COLOR
 
-# Invoke jobs via workflows
-# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
-  default: # This is the name of the workflow, feel free to change it to better match your workflow.
-    # Inside the workflow, you define the jobs you want to run.
+  capstone:
     jobs:
-      # - cfn-lint
-      # - deploy-cfn:
-      #     stack-name: Udacity-Capstone
-      #     requires:
-      #       - cfn-lint
-      # - lint-frontend
-      # - build-frontend:
-      #     requires:
-      #       - lint-frontend
+      - cfn-lint
+      - deploy-cfn:
+          stack-name: Udacity-Capstone
+          requires:
+            - cfn-lint
+      - lint-frontend
+      - build-frontend:
+          requires:
+            - lint-frontend
       - deploy-frontend:
           cluster-name: "EKSClusterCapstone"
-          # requires:
-          #   - build-frontend
-          #   - deploy-cfn
+          requires:
+            - build-frontend
+            - deploy-cfn
 
 
       # - aws-eks/update-container-image:
