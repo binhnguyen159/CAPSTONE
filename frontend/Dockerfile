@@ -1,4 +1,4 @@
-FROM node:13.8.0 AS build
+FROM node:13.8.0-stretch AS build
 WORKDIR /
 # COPY package.json ./
 COPY . .
