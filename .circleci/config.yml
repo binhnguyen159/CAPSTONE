@@ -91,7 +91,8 @@ jobs:
             docker push binhnguyen058/capstone-frontend:latest
 
   deploy-frontend:
-    executor: aws-eks/python3
+    docker:
+      - image: docker:17.05.0-ce-git
     parameters:
       cluster-name:
         description: |
@@ -160,15 +161,15 @@ workflows:
       #     stack-name: Udacity-Capstone
       #     requires:
       #       - cfn-lint
-      - lint-frontend
-      - build-frontend:
-          requires:
-            - lint-frontend
-      # - deploy-frontend:
-      #     cluster-name: "EKSClusterCapstone"
+      # - lint-frontend
+      # - build-frontend:
       #     requires:
-      #       - build-frontend
-      #       - deploy-cfn
+      #       - lint-frontend
+      - deploy-frontend:
+          cluster-name: "EKSClusterCapstone"
+          # requires:
+          #   - build-frontend
+          #   - deploy-cfn
 
 
       # - aws-eks/update-container-image:
